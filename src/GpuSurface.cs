@@ -1,6 +1,6 @@
 // The pad itself, drawn on the GPU. A child window with a Direct3D 11 swap chain sits in the
 // main window; a render thread draws one of the views into it every display refresh. Each
-// view is a pair of HLSL shaders in the Shaders folder, and all of them get the same small
+// view is a pair of HLSL shaders from the Shaders folder, and all of them get the same small
 // block of data: where the fingers are, how hard they press and the shape of each contact.
 // Adding a view means adding a shader file and a line in Views below.
 using System.Diagnostics;
@@ -181,15 +181,22 @@ public sealed class GpuSurface : HwndHost
         });
         factory.MakeWindowAssociation(_hwnd, WindowAssociationFlags.IgnoreAll);
 
-        // Shaders: every view is Common.hlsl followed by its own file.
-        string folder = Path.Combine(AppContext.BaseDirectory, "Shaders");
-        string common = File.ReadAllText(Path.Combine(folder, "Common.hlsl"));
+        // Shaders: every view is Common.hlsl followed by its own file. The sources are built
+        // into the exe (see the project file) and compiled here, when the app starts.
+        static string Shader(string file)
+        {
+            using var stream = typeof(GpuSurface).Assembly.GetManifestResourceStream("Shaders/" + file)
+                ?? throw new InvalidOperationException($"{file} is missing from the app");
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }
+        string common = Shader("Common.hlsl");
         var vertexShaders = new ID3D11VertexShader[Views.Length];
         var pixelShaders = new ID3D11PixelShader[Views.Length];
         ID3D11InputLayout? meshLayout = null;
         for (int i = 0; i < Views.Length; i++)
         {
-            string source = common + "\n" + File.ReadAllText(Path.Combine(folder, Views[i].File));
+            string source = common + "\n" + Shader(Views[i].File);
             using var vertexCode = Compile(source, Views[i].File, Views[i].Vertex, "vs_4_0");
             using var pixelCode = Compile(source, Views[i].File, Views[i].Pixel, "ps_4_0");
             vertexShaders[i] = device.CreateVertexShader(vertexCode, null);

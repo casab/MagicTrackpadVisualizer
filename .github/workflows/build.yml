@@ -1,7 +1,7 @@
 name: Build
 
 # Every push and pull request is built. Pushing a tag like v1.2.3 also publishes a GitHub
-# release with the builds attached.
+# release with the exes attached.
 on:
   push:
     branches: [main]
@@ -35,7 +35,7 @@ jobs:
             echo "version=0.0.0-dev" >> "$GITHUB_OUTPUT"
           fi
 
-      # Self-contained: the download runs without installing .NET.
+      # Self-contained single file: the download is one exe that runs without installing .NET.
       - name: Publish
         run: >
           dotnet publish src/MagicTrackpadVisualizer.csproj -c Release -r ${{ matrix.runtime }}
@@ -43,14 +43,14 @@ jobs:
           -p:EnableCompressionInSingleFile=true -p:DebugType=none
           -p:Version=${{ steps.version.outputs.version }} -o publish
 
-      - name: Zip
+      - name: Name the exe
         shell: pwsh
-        run: Compress-Archive -Path publish/* -DestinationPath MagicTrackpadVisualizer-${{ steps.version.outputs.version }}-${{ matrix.runtime }}.zip
+        run: Move-Item publish/MagicTrackpadVisualizer.exe MagicTrackpadVisualizer-${{ steps.version.outputs.version }}-${{ matrix.runtime }}.exe
 
       - uses: actions/upload-artifact@v4
         with:
           name: MagicTrackpadVisualizer-${{ matrix.runtime }}
-          path: MagicTrackpadVisualizer-*.zip
+          path: MagicTrackpadVisualizer-*.exe
           if-no-files-found: error
 
   release:
@@ -68,5 +68,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: >
-          gh release create "$GITHUB_REF_NAME" MagicTrackpadVisualizer-*.zip
+          gh release create "$GITHUB_REF_NAME" MagicTrackpadVisualizer-*.exe
           --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes

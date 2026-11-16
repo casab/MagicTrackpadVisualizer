@@ -8,13 +8,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>TrackpadVisualizer</RootNamespace>
     <AssemblyName>MagicTrackpadVisualizer</AssemblyName>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The views' shaders are compiled when the app starts, so they ship as files next to
-         the exe, also when everything else is packed into a single file. -->
-    <None Update="Shaders\*.hlsl" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
+    <!-- The views' shader sources are built into the exe, so the app is a single file.
+         They are compiled when it starts. -->
+    <None Remove="Shaders\*.hlsl" />
+    <EmbeddedResource Include="Shaders\*.hlsl" LogicalName="Shaders/%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -30,11 +30,10 @@ positions only).
 
 ## Download and run
 
-1. Get the zip for your PC from the
-   [latest release](https://github.com/casab/MagicTrackpadVisualizer/releases/latest):
-   `win-x64` for most PCs, `win-arm64` for ARM devices.
-2. Unzip it anywhere and run `MagicTrackpadVisualizer.exe`. Keep the `Shaders` folder next
-   to it.
+Get the exe for your PC from the
+[latest release](https://github.com/casab/MagicTrackpadVisualizer/releases/latest)
+(`win-x64` for most PCs, `win-arm64` for ARM devices) and run it. It is a single file;
+put it anywhere.
 
 Nothing needs installing; .NET is included. The download is not code-signed, so Windows
 may show a SmartScreen warning the first time. It has been tried on Windows 11 on x64; the
@@ -125,7 +124,8 @@ drawing.
 
 ### Adding a view
 
-A view is a pair of HLSL shaders in `src/Shaders/`, compiled when the app starts. Every
+A view is a pair of HLSL shaders in `src/Shaders/`. Their sources are built into the exe
+and compiled when the app starts. Every
 view gets the same block of data each frame (`Frame` in `Common.hlsl`): position, pressure
 and presence of up to eight fingers, the shape of each contact, each finger's force-click
 wave and charge, the time and the button state. To add one, write a `.hlsl` file with a
@@ -143,7 +143,7 @@ dotnet run -c Release --project src/MagicTrackpadVisualizer.csproj
 ```
 
 Every push is built by the `Build` workflow. Pushing a tag such as `v1.2.3` also publishes
-a release with the x64 and ARM64 downloads attached.
+a release with the x64 and ARM64 exes attached.
 
 ## License
 
