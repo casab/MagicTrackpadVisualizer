@@ -1,0 +1,72 @@
+name: Build
+
+# Every push and pull request is built. Pushing a tag like v1.2.3 also publishes a GitHub
+# release with the builds attached.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        runtime: [win-x64, win-arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # v1.2.3 -> 1.2.3; anything that is not a release tag is a development build.
+      - name: Version
+        id: version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0-dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Self-contained: the download runs without installing .NET.
+      - name: Publish
+        run: >
+          dotnet publish src/MagicTrackpadVisualizer.csproj -c Release -r ${{ matrix.runtime }}
+          --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true -p:DebugType=none
+          -p:Version=${{ steps.version.outputs.version }} -o publish
+
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path publish/* -DestinationPath MagicTrackpadVisualizer-${{ steps.version.outputs.version }}-${{ matrix.runtime }}.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MagicTrackpadVisualizer-${{ matrix.runtime }}
+          path: MagicTrackpadVisualizer-*.zip
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$GITHUB_REF_NAME" MagicTrackpadVisualizer-*.zip
+          --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes
