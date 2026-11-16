@@ -8,9 +8,9 @@ It is a companion to the
 driver, which reports per-finger pressure and contact size and can fire the trackpad's
 haptic actuator on demand.
 
-![The Grid view during a force click](docs/grid-force-click.png)
+![The Grid view: fingers pressing dents into the sheet, then a force click setting off a shock wave and a tremor that builds while it is held](docs/grid-force-click.gif)
 
-*Screenshots are taken in demo mode, with simulated fingers.*
+*The recording and the screenshots are made in demo mode, with simulated fingers.*
 
 ## What you need
 
@@ -90,6 +90,8 @@ click engages:
 
 Every finger has its own force click, so several can hold one at once. The notch on each
 pressure bar in the side panel marks where it engages.
+
+![Two fingers holding a force click: one already charged, the other just setting off its wave](docs/grid-force-click.png)
 
 It is feedback only: Windows is not told about the force click. The ticks and the buzz
 need the driver setting from [What you need](#what-you-need); until then the side panel
