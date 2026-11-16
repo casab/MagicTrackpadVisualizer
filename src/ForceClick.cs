@@ -12,13 +12,26 @@ using Microsoft.Win32.SafeHandles;
 namespace TrackpadVisualizer;
 
 /// <summary>Tracks, for every finger on its own, whether it is in the force-click stage.
-/// Each finger engages by its own pressure, so two fingers can hold a force click at the
-/// same time and neither takes it over from the other.</summary>
+/// Each finger engages by its own pressure (or, when the pad's total pressure is at its
+/// ceiling, by the size of its contact), so several fingers can hold a force click at the
+/// same time and none takes it over from another.</summary>
 public sealed class ForceClick
 {
     // Engage well above the click (about 65) and let go lower, so a finger hovering around
     // the threshold does not make the stage chatter.
     public const int EngageAt = 170, ReleaseAt = 130;
+
+    // The trackpad's pressures have a ceiling in total. Measured on a Magic Trackpad with
+    // three and four fingers pressing as hard as possible, the sum over all fingers stayed
+    // between about 340 and 480, and the trackpad split it unevenly and differently from
+    // moment to moment: fingers pressing equally hard read e.g. 199, 181 and 0. So with
+    // three or more fingers not every one can reach EngageAt, however hard they press.
+    // What stays steady is the contact size: 26..40 for every finger pressing hard, against
+    // a median of 18 for a resting one. So once the pad is that full, a finger also counts
+    // as force-clicking when its contact is as large as a hard press. Without the driver's
+    // size field (-1) this never applies.
+    const int PadFull = 330, PadFullRelease = 280;
+    const int PressingSize = 30, PressingSizeRelease = 26;
 
     /// <summary>How long a held force click takes to charge up fully, in seconds.</summary>
     public const double ChargeSeconds = 2.5;
@@ -61,19 +74,28 @@ public sealed class ForceClick
     {
         var change = Change.None;
 
+        int total = 0;
+        foreach (var c in frame.Contacts)
+            if (c.Tip && c.Pressure > 0) total += c.Pressure;
+
         for (int i = _engaged.Count - 1; i >= 0; i--)
         {
-            int pressure = -1;   // stays -1 if the finger is gone
+            bool touching = false, holding = false;
             foreach (var c in frame.Contacts)
-                if (c.Id == _engaged[i].Id && c.Tip) pressure = c.Pressure;
-            if (pressure > ReleaseAt) continue;
+            {
+                if (c.Id != _engaged[i].Id || !c.Tip) continue;
+                touching = true;
+                holding = c.Pressure > ReleaseAt || (total >= PadFullRelease && c.Size >= PressingSizeRelease);
+            }
+            if (holding) continue;
             _engaged.RemoveAt(i);
-            if (pressure >= 0) change = Change.Released;
+            if (touching) change = Change.Released;
         }
 
         foreach (var c in frame.Contacts)
         {
-            if (!c.Tip || c.Pressure < EngageAt || IsEngaged(c.Id)) continue;
+            if (!c.Tip || IsEngaged(c.Id)) continue;
+            if (c.Pressure < EngageAt && !(total >= PadFull && c.Size >= PressingSize)) continue;
             _engaged.Add((c.Id, Stopwatch.GetTimestamp()));
             change = Change.Engaged;
         }

@@ -90,6 +90,11 @@ click engages:
 Every finger has its own force click, so several can hold one at once. The notch on each
 pressure bar in the side panel marks where it engages.
 
+With three or more fingers pressing hard, the trackpad's pressures hit a ceiling in total
+(about 340 to 480 across all fingers) and it splits that unevenly, so some fingers read
+far below 170 however hard they press. Once the pad is that full, a finger also counts as
+force-clicking when its contact is as large as a hard press.
+
 ![Two fingers holding a force click: one already charged, the other just setting off its wave](docs/grid-force-click.png)
 
 It is feedback only: Windows is not told about the force click. The ticks and the buzz
